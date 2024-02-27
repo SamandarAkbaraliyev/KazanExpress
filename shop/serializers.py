@@ -14,6 +14,9 @@ class ShopListUpdateSerializer(serializers.ModelSerializer):
         extra_kwargs = {'image': {'required': False}, 'id': {'required': True}}
 
 
+
+
+
 class CategoryListSerializer(serializers.ModelSerializer):
     parent = serializers.StringRelatedField()
     children = serializers.SerializerMethodField()
