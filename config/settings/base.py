@@ -79,11 +79,12 @@ THIRD_PARTY_APPS = [
     "rest_framework.authtoken",
     "corsheaders",
     "drf_spectacular",
+    'django_filters',
 ]
 
 LOCAL_APPS = [
     "users",
-    # Your stuff: custom apps go here
+    'shop',
 ]
 # https://docs.djangoproject.com/en/dev/ref/settings/#installed-apps
 INSTALLED_APPS = DJANGO_APPS + THIRD_PARTY_APPS + LOCAL_APPS
