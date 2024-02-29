@@ -1,12 +1,16 @@
 from shop import models
 from shop import serializers
 from shop import permissions
+from django.db.models import F
 from rest_framework import filters
 from rest_framework import generics
 from rest_framework.permissions import IsAuthenticated
-from django_filters.rest_framework import DjangoFilterBackend
-
+from django.contrib.auth.mixins import PermissionRequiredMixin
+from rest_framework.parsers import MultiPartParser, FormParser
 from shop.filters import PriceRangeFilter
+
+
+from django_filters.rest_framework import DjangoFilterBackend
 
 
 class ShopListAPIView(generics.ListAPIView):
@@ -57,7 +61,6 @@ class ProductListAPIView(generics.ListAPIView):
     filterset_fields = ('is_active',)
 
 
-
 class ProductUpdateAPIView(generics.RetrieveUpdateAPIView):
     queryset = models.Product.objects.all()
     serializer_class = serializers.ProductUpdateSerializer
@@ -75,3 +78,9 @@ class ProductUpdateAPIView(generics.RetrieveUpdateAPIView):
     #
     #         return Response(serializer.data)
     #     return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+
+class ProductCreateAPIView(PermissionRequiredMixin, generics.ListCreateAPIView):
+    permission_required = ("view_product", "add_product")
+    queryset = models.Product.objects.all().annotate(uploaded_images=F('images__image'))
+    serializer_class = serializers.ProductSerializer

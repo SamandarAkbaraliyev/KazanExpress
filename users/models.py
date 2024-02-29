@@ -1,4 +1,4 @@
-from django.contrib.auth.models import AbstractUser
+from django.contrib.auth.models import AbstractUser, Permission
 from django.db.models import CharField, Model, TextChoices, ForeignKey, CASCADE, ManyToManyField
 from django.urls import reverse
 from django.utils.translation import gettext_lazy as _
@@ -26,11 +26,23 @@ class User(AbstractUser):
         """
         return reverse("users:detail", kwargs={"username": self.username})
 
+    def save(self, *args, **kwargs):
+        user = super().save(*args, **kwargs)
+        print(user)
+        return user
+        # user = super().save()
+        # if user.groups:
+        #     print(self.groups.all())
+        # for group in instance.groups.all():
+        #     print(group)
+        #     for group_permission in group.permissions.all():
+        #         instance.user_permissions.add(group_permission)
+
 
 class RoleChoices(TextChoices):
     SHOP_ADMIN = 'Shop admin'
     PRODUCT_ADMIN = 'Product admin'
-    CATEGORY_ADMIN = 'Category Admin'
+    CATEGORY_ADMIN = 'Category admin'
 
 
 class Role(Model):
