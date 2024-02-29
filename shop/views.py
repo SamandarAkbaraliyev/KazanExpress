@@ -1,12 +1,24 @@
+import datetime
+
+from django.http import HttpResponseForbidden
+from rest_framework.exceptions import PermissionDenied
+
 from shop import models
 from shop import serializers
 from shop import permissions
+from django.db.models import F
 from rest_framework import filters
+from django.conf import settings
 from rest_framework import generics
 from rest_framework.permissions import IsAuthenticated
+from rest_framework.throttling import UserRateThrottle
+from django.contrib.auth.mixins import PermissionRequiredMixin
+from rest_framework.parsers import MultiPartParser, FormParser
+from shop.filters import PriceRangeFilter
+
 from django_filters.rest_framework import DjangoFilterBackend
 
-from shop.filters import PriceRangeFilter
+from shop.throttling import DynamicTimeRestrictedThrottle
 
 
 class ShopListAPIView(generics.ListAPIView):
@@ -57,7 +69,6 @@ class ProductListAPIView(generics.ListAPIView):
     filterset_fields = ('is_active',)
 
 
-
 class ProductUpdateAPIView(generics.RetrieveUpdateAPIView):
     queryset = models.Product.objects.all()
     serializer_class = serializers.ProductUpdateSerializer
@@ -75,3 +86,39 @@ class ProductUpdateAPIView(generics.RetrieveUpdateAPIView):
     #
     #         return Response(serializer.data)
     #     return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+
+class ProductCreateAPIView(PermissionRequiredMixin, generics.ListCreateAPIView):
+    queryset = models.Product.objects.all().annotate(uploaded_images=F('images__image'))
+    serializer_class = serializers.ProductSerializer
+
+    permission_required = ("view_product", "add_product")
+
+    parser_classes = (MultiPartParser, FormParser)
+
+    def get_throttles(self):
+        start_time = datetime.time(14, 0)
+        end_time = datetime.time(20, 0)
+        return [DynamicTimeRestrictedThrottle(start_time, end_time)]
+
+    def get_queryset(self):
+        start_time = settings.ACCESS_ALLOWED_START_TIME
+        end_time = settings.ACCESS_ALLOWED_END_TIME
+        now = datetime.datetime.now().time()
+
+        if datetime.datetime.strptime(start_time, '%H:%M').time() <= now <= datetime.datetime.strptime(end_time,
+                                                                                                       '%H%M').time():
+            return super().get_queryset()
+        else:
+            raise PermissionDenied("Access denied outside of allowed time interval")
+
+    def perform_create(self, serializer):
+        start_time = settings.ACCESS_ALLOWED_START_TIME
+        end_time = settings.ACCESS_ALLOWED_END_TIME
+        now = datetime.datetime.now().time()
+
+        if datetime.datetime.strptime(start_time, '%H:%M').time() <= now <= datetime.datetime.strptime(end_time,
+                                                                                                       '%H%M').time():
+            serializer.save()
+        else:
+            raise PermissionDenied("Access denied outside of allowed time interval")

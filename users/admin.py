@@ -20,7 +20,7 @@ class UserAdmin(auth_admin.UserAdmin):
     add_form = UserAdminCreationForm
     fieldsets = (
         (None, {"fields": ("username", "password")}),
-        (_("Personal info"), {"fields": ("name", "email")}),
+        (_("Personal info"), {"fields": ("name", "email", 'avatar')}),
         (
             _("Permissions"),
             {
@@ -38,3 +38,27 @@ class UserAdmin(auth_admin.UserAdmin):
     )
     list_display = ["username", "name", "is_superuser"]
     search_fields = ["name"]
+
+    def get_form(self, request, obj=None, **kwargs):
+        form = super().get_form(request, obj, **kwargs)
+        is_superuser = request.user.is_superuser
+        disabled_fields = set()
+
+        if not is_superuser:
+            disabled_fields |= {
+                'username',
+                'is_superuser',
+                'user_permissions',
+                'is_staff',
+                'groups',
+                'is_active'
+            }
+
+        for f in disabled_fields:
+            if f in form.base_fields:
+                form.base_fields[f].disabled = True
+
+        return form
+
+    def has_delete_permission(self, request, obj=None):
+        return False

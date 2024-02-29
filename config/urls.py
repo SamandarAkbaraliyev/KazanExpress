@@ -8,12 +8,12 @@ from drf_spectacular.views import SpectacularAPIView, SpectacularSwaggerView
 from rest_framework.authtoken.views import obtain_auth_token
 
 urlpatterns = [
-                  # Django Admin, use {% url 'admin:index' %}
                   path(settings.ADMIN_URL, admin.site.urls),
+                  # path('baton/', include('baton.urls')),
                   # User management
                   path("users/", include("users.urls", namespace="users")),
                   path("accounts/", include("allauth.urls")),
-                  path('api/v1/', include('shop.urls')) ,
+                  path('api/v1/', include('shop.urls')),
               ] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
 if settings.DEBUG:
     # Static file serving when using Gunicorn + Uvicorn for local web socket development

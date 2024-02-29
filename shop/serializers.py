@@ -14,9 +14,6 @@ class ShopListUpdateSerializer(serializers.ModelSerializer):
         extra_kwargs = {'image': {'required': False}, 'id': {'required': True}}
 
 
-
-
-
 class CategoryListSerializer(serializers.ModelSerializer):
     parent = serializers.StringRelatedField()
     children = serializers.SerializerMethodField()
@@ -130,3 +127,40 @@ class ProductUpdateSerializer(serializers.ModelSerializer):
         images_list = [models.Images(product=updated_instance, image=image) for image in images]
         models.Images.objects.bulk_create(*images_list)
         return updated_instance
+
+
+class ImagesSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = models.Images
+        fields = ['image']
+
+
+class ProductSerializer(serializers.ModelSerializer):
+    images = ImagesSerializer(many=True, required=False, read_only=True)
+    uploaded_images = serializers.ListField(child=serializers.FileField(max_length=100000, allow_empty_file=False,
+                                                                use_url=False), write_only=True)
+
+    class Meta:
+        model = models.Product
+        fields = (
+            'id',
+            'title',
+            'description',
+            'amount',
+            'price',
+            'is_active',
+            'main_photo',
+            'shop',
+            'category',
+            'images',
+            'uploaded_images'
+        )
+
+    def create(self, validated_data):
+        images_data = validated_data.pop('uploaded_images', [])
+        product = models.Product.objects.create(**validated_data)
+        images = []
+        for image_data in images_data:
+            images.append(models.Images(product=product, image=image_data))
+        models.Images.objects.bulk_create(images)
+        return product
