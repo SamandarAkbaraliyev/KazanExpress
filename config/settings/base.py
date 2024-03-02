@@ -58,12 +58,6 @@ WSGI_APPLICATION = "config.wsgi.application"
 # APPS
 # ------------------------------------------------------------------------------
 DJANGO_APPS = [
-    # 'jazzmin',
-    # 'baton',
-    # 'captcha_admin',
-    # 'captcha',
-    'django4_recaptcha_admin_login',
-    'captcha',
     "django.contrib.auth",
     "django.contrib.contenttypes",
     "django.contrib.sessions",
@@ -73,7 +67,6 @@ DJANGO_APPS = [
     # "django.contrib.humanize", # Handy template tags
     "django.contrib.admin",
     "django.forms",
-    # 'baton.autodiscover',
 ]
 THIRD_PARTY_APPS = [
     "crispy_forms",
@@ -90,7 +83,6 @@ THIRD_PARTY_APPS = [
 ]
 
 LOCAL_APPS = [
-    'snowpenguin.django.recaptcha3',
     "users",
     'shop',
 ]
@@ -144,7 +136,6 @@ MIDDLEWARE = [
     "django.contrib.messages.middleware.MessageMiddleware",
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
     "allauth.account.middleware.AccountMiddleware",
-    "shop.middleware.AllowAccessMiddleware",
 ]
 
 # STATIC
@@ -176,9 +167,7 @@ TEMPLATES = [
         # https://docs.djangoproject.com/en/dev/ref/settings/#std:setting-TEMPLATES-BACKEND
         "BACKEND": "django.template.backends.django.DjangoTemplates",
         # https://docs.djangoproject.com/en/dev/ref/settings/#dirs
-        "DIRS": [
-            'templates'
-        ],
+        "DIRS": [str(BASE_DIR / "templates")],
         # https://docs.djangoproject.com/en/dev/ref/settings/#app-dirs
         "APP_DIRS": True,
         "OPTIONS": {
@@ -326,17 +315,6 @@ REST_FRAMEWORK = {
     ),
     "DEFAULT_PERMISSION_CLASSES": ("rest_framework.permissions.IsAuthenticated",),
     "DEFAULT_SCHEMA_CLASS": "drf_spectacular.openapi.AutoSchema",
-    'DEFAULT_PAGINATION_CLASS': 'rest_framework.pagination.LimitOffsetPagination',
-    'PAGE_SIZE': 100,
-
-    'DEFAULT_THROTTLE_CLASSES': [
-        'rest_framework.throttling.AnonRateThrottle',
-        'rest_framework.throttling.UserRateThrottle'
-    ],
-    'DEFAULT_THROTTLE_RATES': {
-        'anon': '100/day',
-        'user': '1/minute',
-    }
 }
 
 # django-cors-headers - https://github.com/adamchainz/django-cors-headers#setup
@@ -352,9 +330,3 @@ SPECTACULAR_SETTINGS = {
 }
 # Your stuff...
 # ------------------------------------------------------------------------------
-RECAPTCHA_PUBLIC_KEY = '6LcCPIUpAAAAABf6Akjx-R6hFvkO17-A-iTt3cuE'
-RECAPTCHA_PRIVATE_KEY = '6LcCPIUpAAAAAKgrMFdBuDmcevORXzGOQ_ayMZoU'
-
-# RECAPTCHA_PROXY = {'http': 'http://127.0.0.1:8000', 'https': 'https://127.0.0.1:8000'}
-
-# RECAPTCHA_DOMAIN = 'www.recaptcha.net'
