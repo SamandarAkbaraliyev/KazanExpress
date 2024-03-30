@@ -2,6 +2,7 @@ import datetime
 
 from django.http import HttpResponseForbidden
 from rest_framework.exceptions import PermissionDenied
+from rest_framework.response import Response
 
 from shop import models
 from shop import serializers
@@ -15,31 +16,59 @@ from rest_framework.throttling import UserRateThrottle
 from django.contrib.auth.mixins import PermissionRequiredMixin
 from rest_framework.parsers import MultiPartParser, FormParser
 from shop.filters import PriceRangeFilter
-
+from django.core.cache import cache
 from django_filters.rest_framework import DjangoFilterBackend
 
 from shop.throttling import DynamicTimeRestrictedThrottle
 
 
-class ShopListAPIView(generics.ListAPIView):
-    queryset = models.Shop.objects.all()
+class ShopListAPIView(generics.ListCreateAPIView):
+    queryset = models.Shop.objects.all().order_by('-id')
     serializer_class = serializers.ShopListUpdateSerializer
-    permission_classes = (IsAuthenticated, permissions.IsShopAdmin)
+    permission_classes = (IsAuthenticated, )
 
     filter_backends = (filters.SearchFilter,)
     search_fields = ('title',)
+
+    def list(self, request, *args, **kwargs):
+        cache_key = self.get_cache_key()
+        cached_data = cache.get(cache_key)
+
+        if cached_data is not None:
+            return self.get_cached_response(cached_data)
+        print('\n\n\nworking\n\n\n')
+
+        response = super().list(request, *args, **kwargs)
+        data = response.data
+        cache.set(cache_key, data, timeout=None)
+        return response
+
+    def get_cache_key(self):
+        return f"{self.serializer_class.Meta.model.__name__}_list"
+
+    def get_cached_response(self, data):
+        return Response(data)
+
+    def post(self, request, *args, **kwargs):
+        self.update_cache()
+        return super().post(request, *args, **kwargs)
+
+    def update_cache(self):
+        cache_key = self.get_cache_key()
+        cached_data = models.Shop.objects.all().order_by('-id')
+        cache.set(cache_key, cached_data, timeout=None)
 
 
 class ShopRetrieveUpdateView(generics.RetrieveUpdateAPIView):
     queryset = models.Shop.objects.all()
     serializer_class = serializers.ShopListUpdateSerializer
-    permission_classes = (IsAuthenticated, permissions.IsShopAdmin)
+    # permission_classes = (IsAuthenticated, permissions.IsShopAdmin)
 
 
 class CategoryListAPIView(generics.ListAPIView):
     queryset = models.Category.objects.all().filter(parent=None).prefetch_related('children')
     serializer_class = serializers.CategoryListSerializer
-    permission_classes = (IsAuthenticated, permissions.IsCategoryAdmin)
+    # permission_classes = (IsAuthenticated, permissions.IsCategoryAdmin)
 
     filter_backends = (filters.SearchFilter,)
     search_fields = ('title', 'product__id', 'parent__title')
@@ -60,7 +89,7 @@ class CategoryUpdateAPIView(generics.RetrieveUpdateAPIView):
 class ProductListAPIView(generics.ListAPIView):
     queryset = models.Product.objects.all().select_related('shop', 'category')
     serializer_class = serializers.ProductListSerializer
-    permission_classes = (IsAuthenticated, permissions.IsProductAdmin)
+    # permission_classes = (IsAuthenticated, permissions.IsProductAdmin)
 
     filter_backends = [DjangoFilterBackend, filters.SearchFilter, filters.OrderingFilter, PriceRangeFilter]
     search_fields = ('title', 'id')
